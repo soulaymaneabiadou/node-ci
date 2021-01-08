@@ -45,8 +45,78 @@ sudo systemctl status nginx
 sudo systemctl start nginx
 
 # Setup a Config
+cd /etc/nginx/sites-available/
 
+# Restart nginx
+sudo systemctl restart nginx
 
+# go back to the `actions-runner/` directory, then to the 'app/' folder inside of it and then to the repo folder inside that and make nginx to point to this
+
+# Edit the 'default' file
+sudo nano default # and then go to line that says `root /var/www/build` and put the repo's directory path and restart nginx again
+```
+
+### Seting Up an Express app
+> First steps are the same as before,
+> In terms of creating and configuring the runner in the repo,
+> Add `PM2`
+
+#### Adding PM2
+```
+sudo npm i -g pm2
+
+pm2 start file --name=NameHere
+```
+
+#### Make the runner restart the PM2 server
+> In the runner file, do the following: at the end add: 
+> `- run: pm2 restart NameHere`
+
+### Setup Proxy with NGINX
+```bash
+# start the ufw
+sudo ufw enable
+
+sudo ufw allow ssh
+
+sudo ufw allow 'Nginx Full'
+
+# Use nginx to forward the requests
+# Edit the nginx default file, add a location block after the existing one
+# This is assuming that the API endpoints are prefixed with /api
+location /api {
+  rewrite ^\/api\/(.*)$ /api/$1 break;
+  proxy_pass http://localhost:5000;
+}
+```
+
+### Setup a Server Block
+```bash
+# Make a copy of the nginx default config
+sudo cp default namehere.com
+
+# Edit namehere.com, change the `server_name` to point to our domain name, like
+nano namehere.com
+
+# Remove the default_server on the top two rows under the server {
+# And put this in front of the server_name, and then save it
+namehere.com www.namehere.com
+
+# Create a sim link & Restart the nginx
+sudo ln -s /etc/nginx/sites-available/namehere.com /etc/nginx/sites-availabled
+```
+
+### Secure the site, Add SSL Certificate
+```bash
+# Install certbot
+sudo add-apt-repository ppa:certbot/certbot
+
+sudo apt install python-certbot-nginx
+
+sudo apt install python3-certbot-nginx
+
+sudo certbot --nginx -d namehere.com -d www.namehere.com
+# And follow the steps to make it redirect http to https and then you are done
 ```
 
 > N.B: 
